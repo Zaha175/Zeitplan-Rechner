@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/> 
+    <title>Zeitplan-Rechner</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 600px;
+            margin: 20px auto;
+            color: darkblue;
+            font-weight: bold;
+            font-size: 1.2em;
+        }
+        h1 {
+            text-align: center;
+        }
+        label, input, select, button {
+            display: block;
+            margin: 10px 0;
+        }
+        .results {
+            margin-top: 20px;
+        }
+        .results table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        .results th, .results td {
+            border: 1px solid #aaa;
+            padding: 8px;
+            text-align: left;
+        }
+        .results th {
+            background: #f0f0f0;
+        }
+    </style>
+</head>
+<body>
+
+<h1>Zeitplan-Rechner</h1>
+
+<div>
+    <label for="startDate">Startdatum:</label>
+    <input type="date" id="startDate" />
+
+    <label for="startTime">Startzeit:</label>
+    <input type="time" id="startTime" value="19:00"/>
+
+    <label for="rhythmSelect">Rhythmus auswählen:</label>
+    <select id="rhythmSelect">
+        <option value="49h">49-Stunden-Rhythmus</option>
+        <option value="47.59h">47,59-Stunden-Rhythmus (~47 Std 35 Min)</option>
+        <option value="-55m">Alle 2 Tage, jeweils 55 Minuten früher</option>
+    </select>
+
+    <label for="cycles">Anzahl der Zyklen:</label>
+    <input type="number" id="cycles" value="10" min="1"/>
+
+    <button id="calculateBtn">Berechnen</button>
+</div>
+
+<div class="results" id="resultsContainer"></div>
+
+<script>
+    document.getElementById('calculateBtn').addEventListener('click', function() {
+        const startDate = document.getElementById('startDate').value;
+        const startTime = document.getElementById('startTime').value;
+        const rhythm = document.getElementById('rhythmSelect').value;
+        const cycles = parseInt(document.getElementById('cycles').value);
+
+        if(!startDate || !startTime || !rhythm || !cycles) {
+            alert('Bitte alle Felder ausfüllen!');
+            return;
+        }
+
+        // Startzeit als Date-Objekt
+        const startDateTime = new Date(startDate + 'T' + startTime);
+
+        let results = [];
+        let currentTime = new Date(startDateTime);
+
+        for (let i = 1; i <= cycles; i++) {
+            // Aktuellen Zyklus speichern
+            results.push({
+                cycle: i,
+                dateTime: new Date(currentTime)
+            });
+
+            // Nächste Zeit berechnen
+            if (rhythm === '49h') {
+                // 49 Stunden = 2 Tage + 1 Stunde
+                currentTime.setHours(currentTime.getHours() + 49);
+            } else if (rhythm === '47.59h') {
+                // Ca. 47 Std 35 Min
+                // 47 Stunden = 47 * 60 = 2820 Minuten
+                // +35 Minuten = 2855 Minuten gesamt
+                currentTime.setMinutes(currentTime.getMinutes() + 2855);
+            } else if (rhythm === '-55m') {
+                // Alle 2 Tage (48 Stunden) minus 55 Minuten
+                // 48 Stunden = 2880 Minuten
+                // 2880 - 55 = 2825 Minuten
+                currentTime.setMinutes(currentTime.getMinutes() + 2825);
+            }
+        }
+
+        // Ergebnisse anzeigen
+        const container = document.getElementById('resultsContainer');
+        container.innerHTML = '';
+        const table = document.createElement('table');
+        const thead = document.createElement('thead');
+        thead.innerHTML = '<tr><th>Zyklus</th><th>Datum/Zeit</th></tr>';
+        table.appendChild(thead);
+
+        const tbody = document.createElement('tbody');
+        results.forEach(r => {
+            const tr = document.createElement('tr');
+            const dateString = r.dateTime.toLocaleString('de-DE', { 
+                weekday: 'short', 
+                year: 'numeric', 
+                month: '2-digit', 
+                day: '2-digit', 
+                hour: '2-digit', 
+                minute: '2-digit' 
+            });
+            tr.innerHTML = '<td>' + r.cycle + '</td><td>' + dateString + '</td>';
+            tbody.appendChild(tr);
+        });
+
+        table.appendChild(tbody);
+        container.appendChild(table);
+    });
+</script>
+
+</body>
+</html>
